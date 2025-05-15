@@ -1,4 +1,4 @@
-import { DrawPlayer, DrawAura } from "./drawing.js";
+import { DrawPlayer, DrawAura, updateOffset } from "./drawing.js";
 import { gameHeight, gameWidth } from "./script.js";
 const keysDown = { w: false, s: false, a: false, d: false };
 export const playerCoords = { x: 0, y: 0 };
@@ -13,7 +13,7 @@ export class Player {
     this.size = 30;
     this.fillColor = "rgb(221, 221, 221)";
     this.strokeColor = "rgb(156, 156, 156)";
-    this.speed = 150;
+    this.speed = 250;
 
     this.maxHp = 100;
     this.hp = this.maxHp;
@@ -27,10 +27,12 @@ export class Player {
 
     // Attacks
     this.aura = {
-      baseSize: 400,
+      baseSize: 200,
       baseDamage: 20,
-      fillColor: "red",
+      fillColor: "rgba(255, 0, 0, 0.15)",
       strokeColor: "red",
+      dashes: 4,
+      rotation: 0,
     };
   }
 
@@ -98,26 +100,21 @@ export class Player {
     this.move(currentDeltaTime);
     this.handleBorderCollision();
 
-    if (this.aura != null)
-      this.handleAura(this.effectContext, this.x, this.y, this.aura);
-
     playerCoords.x = this.x;
     playerCoords.y = this.y;
-    DrawPlayer(
-      this.x,
-      this.y,
-      this.size,
-      this.fillColor,
-      this.strokeColor,
-      this.mainContext
-    );
+
+    updateOffset(playerCoords.x, playerCoords.y);
+
+    if (this.aura != null) this.handleAura(this.effectContext, this.x, this.y, this.aura);
+
+    DrawPlayer(this.x, this.y, this.size, this.fillColor, this.strokeColor, this.mainContext);
   }
 
-  handleAura(context, x, y, auraProps) {
-    let size = auraProps.baseSize; //TODO stacking buffs
+  handleAura(context, x, y, aura) {
+    let size = aura.baseSize; //TODO stacking buffs
     //TODO Hitting enemies
 
-    DrawAura(context, x, y, size, auraProps.fillColor, auraProps.strokeColor);
+    DrawAura(context, x, y, size, aura);
   }
 
   reset() {
