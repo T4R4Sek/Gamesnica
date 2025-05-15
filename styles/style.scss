@@ -1,0 +1,60 @@
+* {
+  margin: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+body {
+  background-color: rgb(201, 201, 201);
+}
+
+canvas {
+  position: absolute;
+  inset: 0;
+}
+
+#gameBoard0 {
+  background-color: white;
+}
+
+#HUD {
+  position: absolute;
+  inset: 0;
+  z-index: 1000;
+  #coords {
+    padding: 22px 40px;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 22px;
+  }
+}
+
+#gameBoard0 {
+  z-index: 10;
+}
+#gameBoard1 {
+  z-index: 20;
+}
+#gameBoard2 {
+  z-index: 30;
+}
+#gameBoard3 {
+  z-index: 40;
+}
+#gameBoard4 {
+  z-index: 50;
+}
+#gameBoard5 {
+  z-index: 60;
+}
+#gameBoard6 {
+  z-index: 70;
+}
+#gameBoard7 {
+  z-index: 80;
+}
+#gameBoard8 {
+  z-index: 90;
+}
+#gameBoard9 {
+  z-index: 100;
+}
