@@ -1,11 +1,26 @@
-import { DrawEnemy } from "./drawing.js";
+import { DrawEnemy, DrawAura } from "./drawing.js";
 import { gameHeight, gameWidth, enemies } from "./script.js";
 import { playerCoords } from "./player.js";
+import { AuraAttack } from "./attacks.js";
 
 export class Enemy {
-  constructor(context, context2, id, x, y, size, fillColor, strokeColor, speed, shape, behavior) {
-    this.context = context;
-    this.context2 = context2;
+  constructor(
+    mainContext,
+    HUDContext,
+    effectContext,
+    id,
+    x,
+    y,
+    size,
+    fillColor,
+    strokeColor,
+    speed,
+    shape,
+    behavior
+  ) {
+    this.mainContext = mainContext;
+    this.HUDContext = HUDContext;
+    this.effectContext = effectContext;
     this.id = id;
 
     this.x = x;
@@ -21,7 +36,7 @@ export class Enemy {
 
     this.maxHp = 100;
     // this.hp = this.maxHp;
-    this.hp = Math.round(Math.random() * 100);
+    this.hp = this.maxHp;
 
     let vectorX = playerCoords.x - this.x;
     let vectorY = playerCoords.y - this.y;
@@ -34,6 +49,19 @@ export class Enemy {
 
     this.render = true;
     this.active = true;
+
+    if (this.id % 10 == 0)
+      this.aura = {
+        baseSize: 200,
+        baseDamage: 20,
+        fillColor: "rgba(255, 0, 0, 0.15)",
+        strokeColor: "red",
+        dashes: 4,
+        rotation: 0,
+        hitDelay: 1000, // milliseconds
+        canHit: true,
+        timeout: null,
+      };
   }
 
   chaseTarget() {
@@ -89,7 +117,18 @@ export class Enemy {
 
   draw() {
     if (this.render) {
-      DrawEnemy(this.x, this.y, this.size, this.shape, this.fillColor, this.strokeColor, this.context, this.hp, this.maxHp, this.context2);
+      DrawEnemy(
+        this.x,
+        this.y,
+        this.size,
+        this.shape,
+        this.fillColor,
+        this.strokeColor,
+        this.mainContext,
+        this.hp,
+        this.maxHp,
+        this.HUDContext
+      );
     }
   }
 
@@ -128,6 +167,20 @@ export class Enemy {
     this.speed = this.maxSpeed * angleToFactor(angle * (180 / Math.PI));
   }
 
+  handleAura(context, x, y, aura) {
+    let size = aura.baseSize;
+    let damage = aura.baseDamage;
+    AuraAttack(this.x, this.y, size, damage, this.aura, "player");
+
+    DrawAura(context, x, y, size, aura);
+  }
+
+  gotHit(damage, knockback) {
+    this.hp -= damage;
+
+    if (this.hp <= 0) this.die();
+  }
+
   die() {
     this.render = false;
     this.active = false;
@@ -142,10 +195,16 @@ export class Enemy {
 
   update(currentDeltaTime) {
     if (!this.active) return;
+
     this.chaseTarget();
     this.move(currentDeltaTime);
     this.checkAllyProximity();
     this.handleBorderCollision();
+
+    if (this.aura != null || !(this.aura === undefined)) {
+      this.handleAura(this.effectContext, this.x, this.y, this.aura);
+    }
+
     this.draw();
   }
 }

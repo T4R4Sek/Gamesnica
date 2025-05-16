@@ -1,5 +1,8 @@
+import { AuraAttack } from "./attacks.js";
 import { DrawPlayer, DrawAura, updateOffset } from "./drawing.js";
 import { gameHeight, gameWidth } from "./script.js";
+import { Aura } from "./weapons.js";
+
 const keysDown = { w: false, s: false, a: false, d: false };
 export const playerCoords = { x: 0, y: 0 };
 
@@ -26,14 +29,14 @@ export class Player {
     this.pushY = 0;
 
     // Attacks
-    this.aura = {
-      baseSize: 200,
-      baseDamage: 20,
-      fillColor: "rgba(255, 0, 0, 0.15)",
-      strokeColor: "red",
-      dashes: 4,
-      rotation: 0,
-    };
+    this.aura = new Aura(
+      this.effectContext,
+      200,
+      20,
+      "rgba(255, 0, 0, 0.15)",
+      "red",
+      1000
+    );
   }
 
   move(currentDeltaTime) {
@@ -105,20 +108,47 @@ export class Player {
 
     updateOffset(playerCoords.x, playerCoords.y);
 
-    if (this.aura != null) this.handleAura(this.effectContext, this.x, this.y, this.aura);
+    if (this.aura != null || !(this.aura === undefined)) {
+      this.handleAura(this.aura.context, this.x, this.y, this.aura);
+    }
 
-    DrawPlayer(this.x, this.y, this.size, this.fillColor, this.strokeColor, this.mainContext);
+    DrawPlayer(
+      this.x,
+      this.y,
+      this.size,
+      this.fillColor,
+      this.strokeColor,
+      this.mainContext
+    );
   }
 
   handleAura(context, x, y, aura) {
-    let size = aura.baseSize; //TODO stacking buffs
+    let size = this.aura.baseSize; //TODO stacking buffs
+    let damage = this.aura.baseDamage; //TODO stacking buffs
+    AuraAttack(this.x, this.y, size, damage, this.aura, "enemies");
     //TODO Hitting enemies
 
     DrawAura(context, x, y, size, aura);
   }
 
+  gotHit(damage, knockback) {
+    if (this.sp > damage) {
+      this.sp -= damage;
+    } else if (this.sp > 0 && this.sp <= damage) {
+      damage -= this.sp;
+      this.hp -= damage;
+
+      this.sp = 0;
+    } else this.hp -= damage;
+    if (this.hp <= 0) this.die();
+  }
+
+  die() {
+    console.warn("Player died");
+  }
+
   reset() {
-    // Reset stats code
+    //TODO Reset stats code
   }
 }
 

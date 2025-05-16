@@ -55,7 +55,7 @@ export let gameHeight = gameWidth;
 
 export let windowWidth;
 export let windowHeight;
-const player = new Player(ctx5, ctx2);
+export const player = new Player(ctx5, ctx2);
 export const enemies = [];
 
 function load() {
@@ -297,6 +297,7 @@ setTimeout(() => {
       new Enemy(
         ctx3,
         ctx4,
+        ctx2,
         nextId++,
         50 + 50 * i,
         400,

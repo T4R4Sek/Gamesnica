@@ -34,7 +34,18 @@ export function DrawPlayer(x, y, size, fillColor, strokeColor, context) {
   // context.stroke();
 }
 
-export function DrawEnemy(x, y, size, shape, fillColor, strokeColor, context, hp, maxHp, context2) {
+export function DrawEnemy(
+  x,
+  y,
+  size,
+  shape,
+  fillColor,
+  strokeColor,
+  context,
+  hp,
+  maxHp,
+  context2
+) {
   context.fillStyle = fillColor;
   context.strokeStyle = strokeColor;
   context.lineWidth = 1;
@@ -71,7 +82,12 @@ export function DrawBorder(context) {
   context.fillStyle = "rgb(117, 117, 117)";
   context.lineWidth = 5;
   // Gray Filling
-  context.fillRect(borderX - borderOffset, borderY - borderOffset, gameWidth + borderOffset * 2, gameHeight + borderOffset * 2);
+  context.fillRect(
+    borderX - borderOffset,
+    borderY - borderOffset,
+    gameWidth + borderOffset * 2,
+    gameHeight + borderOffset * 2
+  );
   // Clear space inside
   context.clearRect(borderX, borderY, gameWidth, gameHeight);
   // Draw black border
@@ -84,67 +100,98 @@ export function DrawBorder(context) {
   context.stroke();
 }
 
-export function DrawAura(context, x, y, size, aura) {
+export function DrawAura(x, y, size, aura) {
   let renderX = x + drawingOffset.x;
   let renderY = y + drawingOffset.y;
 
   // Context setup
   let dashes = Math.round(Math.min(10, Math.max(2, size / 30)));
-  context.setLineDash([(Math.PI * size) / dashes, (Math.PI * size) / dashes]);
-  context.fillStyle = aura.fillColor;
-  context.strokeStyle = aura.strokeColor;
-  context.lineWidth = Math.min(4, Math.max(1, size / 60));
-  console.log(
+  aura.context.setLineDash([
+    (Math.PI * size) / dashes,
+    (Math.PI * size) / dashes,
+  ]);
+  aura.context.fillStyle = aura.fillColor;
+  aura.context.strokeStyle = aura.strokeColor;
+  aura.context.lineWidth = Math.min(4, Math.max(1, size / 60));
+  /*console.log(
     `x: ${x}, y: ${y}, size: ${size}, fillColor: ${aura.fillColor}, strokeColor: ${aura.strokeColor}, lineWidth: ${Math.min(
       5,
       Math.max(1, size / 60)
     )}`
-  );
+  );*/
 
   aura.rotation += 0.003;
   if (aura.rotation >= 360) aura.rotation = 0;
 
   // Drawing
-  context.save();
-  context.translate(renderX, renderY);
-  context.rotate(aura.rotation);
-  context.beginPath();
-  context.arc(0, 0, size, 0, Math.PI * 2);
-  context.fill();
-  context.stroke();
-  context.restore();
+  aura.context.save();
+  aura.context.translate(renderX, renderY);
+  aura.context.rotate(aura.rotation);
+  aura.context.beginPath();
+  aura.context.arc(0, 0, size, 0, Math.PI * 2);
+  aura.context.fill();
+  aura.context.stroke();
+  aura.context.restore();
 }
 
-export function updateHUD(x, y, health, maxHealth, context, shields, maxShields) {
+export function updateHUD(
+  x,
+  y,
+  health,
+  maxHealth,
+  context,
+  shields,
+  maxShields
+) {
   xCoordHUD.textContent = "x: " + Math.round(x);
   yCoordHUD.textContent = "y: " + Math.round(y);
 
+  // HUD health outline
   context.fillStyle = "black";
-  context.fillRect(healthOffset, windowHeight - healthOffset - healthHeight, baseHealthWidth, healthHeight);
+  context.fillRect(
+    healthOffset,
+    windowHeight - healthOffset - healthHeight,
+    baseHealthWidth,
+    healthHeight
+  );
+
+  // HUD heatlh fill
   context.fillStyle = "red";
   context.fillRect(
     healthOffset + 3,
     windowHeight - healthOffset - healthHeight + 3,
-    (baseHealthWidth - 6) * (health / maxHealth),
+    (baseHealthWidth - 6) * (Math.max(0, health) / maxHealth),
     healthHeight - 6
   );
-  if (maxShields != 0) {
+
+  // HUD shields
+  if (true) {
+    console.log(shields);
     shieldAnimationFunction();
     context.fillStyle = "hsla(59, 100.00%, 50.00%, " + shieldAnimation + ")";
     context.fillRect(
       healthOffset + 3,
       windowHeight - healthOffset - healthHeight + 3,
-      (baseHealthWidth - 6) * (shields / maxShields),
+      (baseHealthWidth - 6) * (Math.max(0, shields) / maxShields),
       healthHeight - 6
     );
   }
 }
 
+/**
+ * Updates the drawingOffset variable, used to render stuff
+ *
+ * @param {number} x - The width of the rectangle.
+ * @param {number} y - The height of the rectangle.
+ */
 export function updateOffset(x, y) {
   drawingOffset.x = windowWidth / 2 - x;
   drawingOffset.y = windowHeight / 2 - y;
 }
 
+/**
+ * Animates the shield HUD
+ */
 function shieldAnimationFunction() {
   if (shieldAnimationDirection == 1) {
     shieldAnimation += shieldAnimationSpeed;
@@ -152,7 +199,9 @@ function shieldAnimationFunction() {
       shieldAnimationDirection = 2;
       shieldAnimationSpeed = Math.max(
         shieldAnimationSpeedMin,
-        Math.random() * shieldAnimationSpeedDeviation - shieldAnimationSpeedDeviation / 2 + shieldAnimationBaseSpeed
+        Math.random() * shieldAnimationSpeedDeviation -
+          shieldAnimationSpeedDeviation / 2 +
+          shieldAnimationBaseSpeed
       );
     }
   } else {
@@ -161,7 +210,9 @@ function shieldAnimationFunction() {
       shieldAnimationDirection = 1;
       shieldAnimationSpeed = Math.max(
         shieldAnimationSpeedMin,
-        Math.random() * shieldAnimationSpeedDeviation - shieldAnimationSpeedDeviation / 2 + shieldAnimationBaseSpeed
+        Math.random() * shieldAnimationSpeedDeviation -
+          shieldAnimationSpeedDeviation / 2 +
+          shieldAnimationBaseSpeed
       );
     }
   }
