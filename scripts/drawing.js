@@ -34,18 +34,7 @@ export function DrawPlayer(x, y, size, fillColor, strokeColor, context) {
   // context.stroke();
 }
 
-export function DrawEnemy(
-  x,
-  y,
-  size,
-  shape,
-  fillColor,
-  strokeColor,
-  context,
-  hp,
-  maxHp,
-  context2
-) {
+export function DrawEnemy(x, y, size, shape, fillColor, strokeColor, context, hp, maxHp, context2) {
   context.fillStyle = fillColor;
   context.strokeStyle = strokeColor;
   context.lineWidth = 1;
@@ -61,6 +50,7 @@ export function DrawEnemy(
     context.strokeRect(renderX - size, renderY - size, size * 2, size * 2);
   }
 
+  context2.globalAlpha = 1;
   context2.lineWidth = 4;
   context2.strokeStyle = "black";
   context2.beginPath();
@@ -82,12 +72,7 @@ export function DrawBorder(context) {
   context.fillStyle = "rgb(117, 117, 117)";
   context.lineWidth = 5;
   // Gray Filling
-  context.fillRect(
-    borderX - borderOffset,
-    borderY - borderOffset,
-    gameWidth + borderOffset * 2,
-    gameHeight + borderOffset * 2
-  );
+  context.fillRect(borderX - borderOffset, borderY - borderOffset, gameWidth + borderOffset * 2, gameHeight + borderOffset * 2);
   // Clear space inside
   context.clearRect(borderX, borderY, gameWidth, gameHeight);
   // Draw black border
@@ -106,13 +91,10 @@ export function DrawAura(x, y, size, aura) {
 
   // Context setup
   let dashes = Math.round(Math.min(10, Math.max(2, size / 30)));
-  aura.context.setLineDash([
-    (Math.PI * size) / dashes,
-    (Math.PI * size) / dashes,
-  ]);
+  aura.context.setLineDash([(Math.PI * size) / dashes, (Math.PI * size) / dashes]);
   aura.context.fillStyle = aura.fillColor;
   aura.context.strokeStyle = aura.strokeColor;
-  aura.context.lineWidth = Math.min(4, Math.max(1, size / 60));
+  aura.context.lineWidth = Math.min(4, Math.max(1, size / 60)) * aura.lineWidth;
   /*console.log(
     `x: ${x}, y: ${y}, size: ${size}, fillColor: ${aura.fillColor}, strokeColor: ${aura.strokeColor}, lineWidth: ${Math.min(
       5,
@@ -120,40 +102,56 @@ export function DrawAura(x, y, size, aura) {
     )}`
   );*/
 
-  aura.rotation += 0.003;
-  if (aura.rotation >= 360) aura.rotation = 0;
+  aura.rotation += 0.003 * aura.rotationDirection;
+  if (aura.rotation >= 360 || aura.rotation <= -360) aura.rotation = 0;
+
+  // 50
+  // (50 * -1 >= 360 * -1)
+  // (-50 >= -360)
 
   // Drawing
   aura.context.save();
+
   aura.context.translate(renderX, renderY);
   aura.context.rotate(aura.rotation);
+
   aura.context.beginPath();
   aura.context.arc(0, 0, size, 0, Math.PI * 2);
+
+  aura.context.globalAlpha = aura.currentAlpha;
   aura.context.fill();
+
+  aura.context.globalAlpha = 1;
   aura.context.stroke();
+
   aura.context.restore();
+
+  if (aura.currentAlpha > aura.minAlpha) {
+    aura.updateRender();
+  }
 }
 
-export function updateHUD(
-  x,
-  y,
-  health,
-  maxHealth,
-  context,
-  shields,
-  maxShields
-) {
+export function DrawHealingOrb(orb) {
+  orb.context.fillStyle = "rgb(0, 255, 0)";
+  orb.context.strokeStyle = "rgb(0, 255, 0)";
+  orb.context.beginPath();
+  orb.context.globalAlpha = 1;
+  orb.context.arc(orb.x + drawingOffset.x, orb.y + drawingOffset.y, 3, 0, Math.PI * 2);
+  orb.context.fill();
+  orb.context.beginPath();
+  orb.context.globalAlpha = 0.2;
+  orb.context.arc(orb.x + drawingOffset.x, orb.y + drawingOffset.y, 8, 0, Math.PI * 2);
+  orb.context.fill();
+  orb.context.stroke();
+}
+
+export function UpdateHUD(x, y, health, maxHealth, context, shields, maxShields) {
   xCoordHUD.textContent = "x: " + Math.round(x);
   yCoordHUD.textContent = "y: " + Math.round(y);
 
   // HUD health outline
   context.fillStyle = "black";
-  context.fillRect(
-    healthOffset,
-    windowHeight - healthOffset - healthHeight,
-    baseHealthWidth,
-    healthHeight
-  );
+  context.fillRect(healthOffset, windowHeight - healthOffset - healthHeight, baseHealthWidth, healthHeight);
 
   // HUD heatlh fill
   context.fillStyle = "red";
@@ -165,17 +163,14 @@ export function updateHUD(
   );
 
   // HUD shields
-  if (true) {
-    console.log(shields);
-    shieldAnimationFunction();
-    context.fillStyle = "hsla(59, 100.00%, 50.00%, " + shieldAnimation + ")";
-    context.fillRect(
-      healthOffset + 3,
-      windowHeight - healthOffset - healthHeight + 3,
-      (baseHealthWidth - 6) * (Math.max(0, shields) / maxShields),
-      healthHeight - 6
-    );
-  }
+  shieldAnimationFunction();
+  context.fillStyle = "hsla(59, 100.00%, 50.00%, " + shieldAnimation + ")";
+  context.fillRect(
+    healthOffset + 3,
+    windowHeight - healthOffset - healthHeight + 3,
+    (baseHealthWidth - 6) * (Math.max(0, shields) / maxShields),
+    healthHeight - 6
+  );
 }
 
 /**
@@ -184,7 +179,7 @@ export function updateHUD(
  * @param {number} x - The width of the rectangle.
  * @param {number} y - The height of the rectangle.
  */
-export function updateOffset(x, y) {
+export function UpdateOffset(x, y) {
   drawingOffset.x = windowWidth / 2 - x;
   drawingOffset.y = windowHeight / 2 - y;
 }
@@ -199,9 +194,7 @@ function shieldAnimationFunction() {
       shieldAnimationDirection = 2;
       shieldAnimationSpeed = Math.max(
         shieldAnimationSpeedMin,
-        Math.random() * shieldAnimationSpeedDeviation -
-          shieldAnimationSpeedDeviation / 2 +
-          shieldAnimationBaseSpeed
+        Math.random() * shieldAnimationSpeedDeviation - shieldAnimationSpeedDeviation / 2 + shieldAnimationBaseSpeed
       );
     }
   } else {
@@ -210,9 +203,7 @@ function shieldAnimationFunction() {
       shieldAnimationDirection = 1;
       shieldAnimationSpeed = Math.max(
         shieldAnimationSpeedMin,
-        Math.random() * shieldAnimationSpeedDeviation -
-          shieldAnimationSpeedDeviation / 2 +
-          shieldAnimationBaseSpeed
+        Math.random() * shieldAnimationSpeedDeviation - shieldAnimationSpeedDeviation / 2 + shieldAnimationBaseSpeed
       );
     }
   }

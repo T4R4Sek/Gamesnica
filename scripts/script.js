@@ -1,48 +1,28 @@
 import { Player, playerCoords } from "./player.js";
 import { Enemy } from "./enemy.js";
-import { DrawBorder, updateHUD } from "./drawing.js";
+import { DrawBorder, UpdateHUD } from "./drawing.js";
 
-const gameBoard0 =
-  /** @type {HTMLCanvasElement} */ document.getElementById("gameBoard0");
-const gameBoard1 =
-  /** @type {HTMLCanvasElement} */ document.getElementById("gameBoard1");
-const gameBoard2 =
-  /** @type {HTMLCanvasElement} */ document.getElementById("gameBoard2");
-const gameBoard3 =
-  /** @type {HTMLCanvasElement} */ document.getElementById("gameBoard3");
-const gameBoard4 =
-  /** @type {HTMLCanvasElement} */ document.getElementById("gameBoard4");
-const gameBoard5 =
-  /** @type {HTMLCanvasElement} */ document.getElementById("gameBoard5");
-const gameBoard6 =
-  /** @type {HTMLCanvasElement} */ document.getElementById("gameBoard6");
-const gameBoard7 =
-  /** @type {HTMLCanvasElement} */ document.getElementById("gameBoard7");
-const gameBoard8 =
-  /** @type {HTMLCanvasElement} */ document.getElementById("gameBoard8");
-const gameBoard9 =
-  /** @type {HTMLCanvasElement} */ document.getElementById("gameBoard9");
+const gameBoard0 = /** @type {HTMLCanvasElement} */ document.getElementById("gameBoard0");
+const gameBoard1 = /** @type {HTMLCanvasElement} */ document.getElementById("gameBoard1");
+const gameBoard2 = /** @type {HTMLCanvasElement} */ document.getElementById("gameBoard2");
+const gameBoard3 = /** @type {HTMLCanvasElement} */ document.getElementById("gameBoard3");
+const gameBoard4 = /** @type {HTMLCanvasElement} */ document.getElementById("gameBoard4");
+const gameBoard5 = /** @type {HTMLCanvasElement} */ document.getElementById("gameBoard5");
+const gameBoard6 = /** @type {HTMLCanvasElement} */ document.getElementById("gameBoard6");
+const gameBoard7 = /** @type {HTMLCanvasElement} */ document.getElementById("gameBoard7");
+const gameBoard8 = /** @type {HTMLCanvasElement} */ document.getElementById("gameBoard8");
+const gameBoard9 = /** @type {HTMLCanvasElement} */ document.getElementById("gameBoard9");
 
-const ctx0 =
-  /** @type {CanvasRenderingContext2D} */ gameBoard0.getContext("2d");
-const ctx1 =
-  /** @type {CanvasRenderingContext2D} */ gameBoard1.getContext("2d");
-const ctx2 =
-  /** @type {CanvasRenderingContext2D} */ gameBoard2.getContext("2d");
-const ctx3 =
-  /** @type {CanvasRenderingContext2D} */ gameBoard3.getContext("2d");
-const ctx4 =
-  /** @type {CanvasRenderingContext2D} */ gameBoard4.getContext("2d");
-const ctx5 =
-  /** @type {CanvasRenderingContext2D} */ gameBoard5.getContext("2d");
-const ctx6 =
-  /** @type {CanvasRenderingContext2D} */ gameBoard6.getContext("2d");
-const ctx7 =
-  /** @type {CanvasRenderingContext2D} */ gameBoard7.getContext("2d");
-const ctx8 =
-  /** @type {CanvasRenderingContext2D} */ gameBoard8.getContext("2d");
-const ctx9 =
-  /** @type {CanvasRenderingContext2D} */ gameBoard9.getContext("2d");
+const ctx0 = /** @type {CanvasRenderingContext2D} */ gameBoard0.getContext("2d");
+const ctx1 = /** @type {CanvasRenderingContext2D} */ gameBoard1.getContext("2d");
+const ctx2 = /** @type {CanvasRenderingContext2D} */ gameBoard2.getContext("2d");
+const ctx3 = /** @type {CanvasRenderingContext2D} */ gameBoard3.getContext("2d");
+export const ctx4 = /** @type {CanvasRenderingContext2D} */ gameBoard4.getContext("2d");
+const ctx5 = /** @type {CanvasRenderingContext2D} */ gameBoard5.getContext("2d");
+const ctx6 = /** @type {CanvasRenderingContext2D} */ gameBoard6.getContext("2d");
+const ctx7 = /** @type {CanvasRenderingContext2D} */ gameBoard7.getContext("2d");
+const ctx8 = /** @type {CanvasRenderingContext2D} */ gameBoard8.getContext("2d");
+const ctx9 = /** @type {CanvasRenderingContext2D} */ gameBoard9.getContext("2d");
 
 let lastTime = 0;
 const targetFPS = 140;
@@ -57,6 +37,7 @@ export let windowWidth;
 export let windowHeight;
 export const player = new Player(ctx5, ctx2);
 export const enemies = [];
+export const collectibles = [];
 
 function load() {
   clearBoards();
@@ -130,18 +111,16 @@ function update(timestamp) {
 
   //? --- Actual updates ---
   player.update(deltaTimeAccumulated);
-  // DrawEnemy(100, 150, 20, "circle", "rgb(255, 118, 118)", "red", ctx3);
-  enemies.forEach((enemy) => enemy.update(deltaTimeAccumulated));
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    enemies[i].update(deltaTimeAccumulated);
+  }
+  for (let i = collectibles.length - 1; i >= 0; i--) {
+    collectibles[i].update(deltaTimeAccumulated);
+  }
+
   DrawBorder(ctx8);
-  updateHUD(
-    playerCoords.x,
-    playerCoords.y,
-    player.hp,
-    player.maxHp,
-    ctx9,
-    player.sp,
-    player.maxSp
-  );
+
+  UpdateHUD(playerCoords.x, playerCoords.y, player.hp, player.maxHp, ctx9, player.sp, player.maxSp);
   //? --- End of updates ---
 
   deltaTimeAccumulated = 0;
@@ -162,35 +141,11 @@ function clearBoards() {
 
 function randomStuff() {
   for (let i = 0; i < 200; i++) {
-    enemies.push(
-      new Enemy(
-        ctx3,
-        nextId++,
-        50 + 8 * i,
-        50,
-        20,
-        "rgb(255, 155, 155)",
-        "red",
-        20 + i * 0.25,
-        "circle",
-        "chasePlayer"
-      )
-    );
+    enemies.push(new Enemy(ctx3, nextId++, 50 + 8 * i, 50, 20, "rgb(255, 155, 155)", "red", 20 + i * 0.25, "circle", "chasePlayer"));
   }
   for (let i = 0; i < 200; i++) {
     enemies.push(
-      new Enemy(
-        ctx3,
-        nextId++,
-        gameWidth - 50 - 8 * i,
-        50,
-        20,
-        "rgb(255, 155, 155)",
-        "red",
-        20 + i * 0.25,
-        "circle",
-        "chasePlayer"
-      )
+      new Enemy(ctx3, nextId++, gameWidth - 50 - 8 * i, 50, 20, "rgb(255, 155, 155)", "red", 20 + i * 0.25, "circle", "chasePlayer")
     );
   }
   for (let i = 0; i < 200; i++) {
@@ -211,66 +166,20 @@ function randomStuff() {
   }
   for (let i = 0; i < 200; i++) {
     enemies.push(
-      new Enemy(
-        ctx3,
-        nextId++,
-        50 + 8 * i,
-        gameHeight - 50,
-        20,
-        "rgb(255, 155, 155)",
-        "red",
-        20 + i * 0.25,
-        "circle",
-        "chasePlayer"
-      )
+      new Enemy(ctx3, nextId++, 50 + 8 * i, gameHeight - 50, 20, "rgb(255, 155, 155)", "red", 20 + i * 0.25, "circle", "chasePlayer")
     );
   }
   for (let i = 0; i < 200; i++) {
     enemies.push(
-      new Enemy(
-        ctx3,
-        nextId++,
-        50,
-        gameHeight - 50 - 8 * i,
-        20,
-        "rgb(255, 155, 155)",
-        "red",
-        20 + i * 0.25,
-        "circle",
-        "chasePlayer"
-      )
+      new Enemy(ctx3, nextId++, 50, gameHeight - 50 - 8 * i, 20, "rgb(255, 155, 155)", "red", 20 + i * 0.25, "circle", "chasePlayer")
     );
   }
   for (let i = 0; i < 200; i++) {
-    enemies.push(
-      new Enemy(
-        ctx3,
-        nextId++,
-        50,
-        50 + 8 * i,
-        20,
-        "rgb(255, 155, 155)",
-        "red",
-        20 + i * 0.25,
-        "circle",
-        "chasePlayer"
-      )
-    );
+    enemies.push(new Enemy(ctx3, nextId++, 50, 50 + 8 * i, 20, "rgb(255, 155, 155)", "red", 20 + i * 0.25, "circle", "chasePlayer"));
   }
   for (let i = 0; i < 200; i++) {
     enemies.push(
-      new Enemy(
-        ctx3,
-        nextId++,
-        gameWidth - 50,
-        50 + 8 * i,
-        20,
-        "rgb(255, 155, 155)",
-        "red",
-        20 + i * 0.25,
-        "circle",
-        "chasePlayer"
-      )
+      new Enemy(ctx3, nextId++, gameWidth - 50, 50 + 8 * i, 20, "rgb(255, 155, 155)", "red", 20 + i * 0.25, "circle", "chasePlayer")
     );
   }
   for (let i = 0; i < 200; i++) {
@@ -293,22 +202,7 @@ function randomStuff() {
 
 setTimeout(() => {
   for (let i = 0; i < 30; i++) {
-    enemies.push(
-      new Enemy(
-        ctx3,
-        ctx4,
-        ctx2,
-        nextId++,
-        50 + 50 * i,
-        400,
-        20,
-        "rgb(255, 155, 155)",
-        "red",
-        25,
-        "circle",
-        "chasePlayer"
-      )
-    );
+    enemies.push(new Enemy(ctx3, ctx4, ctx2, nextId++, 50 + 50 * i, 400, 20, "rgb(255, 155, 155)", "red", 25, "circle", "chasePlayer"));
   }
 }, 50);
 

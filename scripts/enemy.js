@@ -2,22 +2,11 @@ import { DrawEnemy, DrawAura } from "./drawing.js";
 import { gameHeight, gameWidth, enemies } from "./script.js";
 import { playerCoords } from "./player.js";
 import { AuraAttack } from "./attacks.js";
+import { Aura } from "./weapons.js";
+import { checkDrops } from "./drops.js";
 
 export class Enemy {
-  constructor(
-    mainContext,
-    HUDContext,
-    effectContext,
-    id,
-    x,
-    y,
-    size,
-    fillColor,
-    strokeColor,
-    speed,
-    shape,
-    behavior
-  ) {
+  constructor(mainContext, HUDContext, effectContext, id, x, y, size, fillColor, strokeColor, speed, shape, behavior) {
     this.mainContext = mainContext;
     this.HUDContext = HUDContext;
     this.effectContext = effectContext;
@@ -50,18 +39,7 @@ export class Enemy {
     this.render = true;
     this.active = true;
 
-    if (this.id % 10 == 0)
-      this.aura = {
-        baseSize: 200,
-        baseDamage: 20,
-        fillColor: "rgba(255, 0, 0, 0.15)",
-        strokeColor: "red",
-        dashes: 4,
-        rotation: 0,
-        hitDelay: 1000, // milliseconds
-        canHit: true,
-        timeout: null,
-      };
+    if (this.id % 1 == 0) this.aura = new Aura(this.effectContext, 130, 20, "red", 0.15, 0.4, "red", 2000);
   }
 
   chaseTarget() {
@@ -167,12 +145,12 @@ export class Enemy {
     this.speed = this.maxSpeed * angleToFactor(angle * (180 / Math.PI));
   }
 
-  handleAura(context, x, y, aura) {
-    let size = aura.baseSize;
+  handleAura(x, y, aura) {
+    let size = aura.size;
     let damage = aura.baseDamage;
     AuraAttack(this.x, this.y, size, damage, this.aura, "player");
 
-    DrawAura(context, x, y, size, aura);
+    DrawAura(x, y, size, aura);
   }
 
   gotHit(damage, knockback) {
@@ -184,6 +162,8 @@ export class Enemy {
   die() {
     this.render = false;
     this.active = false;
+
+    checkDrops(this.x, this.y, "normal");
 
     const index = enemies.findIndex((item) => item.id === this.id);
     if (index !== -1) {
@@ -202,7 +182,7 @@ export class Enemy {
     this.handleBorderCollision();
 
     if (this.aura != null || !(this.aura === undefined)) {
-      this.handleAura(this.effectContext, this.x, this.y, this.aura);
+      this.handleAura(this.x, this.y, this.aura);
     }
 
     this.draw();

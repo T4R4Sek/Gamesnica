@@ -18,6 +18,7 @@ export function AuraAttack(x, y, size, damage, aura, target) {
 
   if (auraHit == true) {
     aura.canHit = false;
+    aura.hitAnimation();
     aura.timeout = setTimeout(() => {
       aura.canHit = true;
     }, aura.hitDelay);
