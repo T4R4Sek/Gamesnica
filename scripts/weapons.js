@@ -8,6 +8,7 @@ export class Aura {
     this.strokeColor = strokeColor;
     this.hitDelay = hitDelay;
     this.rotation = Math.floor(Math.random() * 360);
+    this.rotationSpeed = 0.003 + Math.random() * 0.002;
     Math.random() > 0.5 ? (this.rotationDirection = 1) : (this.rotationDirection = -1);
     this.canHit = true;
     this.timeout = null;

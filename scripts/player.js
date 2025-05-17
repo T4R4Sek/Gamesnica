@@ -1,15 +1,24 @@
 import { AuraAttack } from "./attacks.js";
 import { DrawPlayer, DrawAura, UpdateOffset } from "./drawing.js";
-import { gameHeight, gameWidth } from "./script.js";
+import { HealthChangeDisplay } from "./healthChangeDisplay.js";
+import { gameHeight, gameWidth, healthChangeDisplays } from "./script.js";
 import { Aura } from "./weapons.js";
 
 const keysDown = { w: false, s: false, a: false, d: false };
 export const playerCoords = { x: 0, y: 0 };
 
+/**
+ * The player class
+ *
+ * @param {CanvasRenderingContext2D} mainContext - Is used to draw the player model
+ * @param {CanvasRenderingContext2D} effectContext - Is used for certain effects (like Aura)
+ * @param {CanvasRenderingContext2D} healthChangeContext - Is used for health change display
+ */
 export class Player {
-  constructor(mainContext, effectContext) {
+  constructor(mainContext, effectContext, healthChangeContext) {
     this.mainContext = mainContext;
     this.effectContext = effectContext;
+    this.healthChangeContext = healthChangeContext;
 
     this.x = gameWidth * 0.5;
     this.y = gameHeight * 0.5;
@@ -28,8 +37,11 @@ export class Player {
     this.pushX = 0;
     this.pushY = 0;
 
-    // Attacks
-    this.aura = new Aura(this.effectContext, 200, 50, "rgb(70, 243, 255)", 0.25, 0.5, "rgb(70, 203, 255)", 1500);
+    // --- Attacks ---
+    this.aura = new Aura(this.effectContext, 250, 30, "rgb(70, 243, 255)", 0.15, 0.4, "rgb(70, 203, 255)", 1000);
+
+    // Coins
+    this.coins = 20;
   }
 
   move(currentDeltaTime) {
@@ -125,8 +137,18 @@ export class Player {
       this.hp -= damage;
 
       this.sp = 0;
-    } else this.hp -= damage;
+    } else this.hp = Math.max(this.hp - damage, 0);
     if (this.hp <= 0) this.die();
+  }
+
+  heal(amount) {
+    this.hp = Math.min(this.hp + amount, this.maxHp);
+    healthChangeDisplays.push(new HealthChangeDisplay(this.x, this.y, amount, this.healthChangeContext, "rgb(0, 255, 0)"));
+  }
+
+  addCoins(amount) {
+    this.coins += amount;
+    console.log("Coins: " + this.coins);
   }
 
   die() {

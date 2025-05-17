@@ -1,15 +1,17 @@
 import { DrawEnemy, DrawAura } from "./drawing.js";
-import { gameHeight, gameWidth, enemies } from "./script.js";
+import { gameHeight, gameWidth, enemies, healthChangeDisplays } from "./script.js";
 import { playerCoords } from "./player.js";
 import { AuraAttack } from "./attacks.js";
 import { Aura } from "./weapons.js";
 import { checkDrops } from "./drops.js";
+import { HealthChangeDisplay } from "./healthChangeDisplay.js";
 
 export class Enemy {
-  constructor(mainContext, HUDContext, effectContext, id, x, y, size, fillColor, strokeColor, speed, shape, behavior) {
+  constructor(mainContext, HUDContext, effectContext, healthChangeContext, id, x, y, size, fillColor, strokeColor, speed, shape, behavior) {
     this.mainContext = mainContext;
     this.HUDContext = HUDContext;
     this.effectContext = effectContext;
+    this.healthChangeContext = healthChangeContext;
     this.id = id;
 
     this.x = x;
@@ -39,7 +41,7 @@ export class Enemy {
     this.render = true;
     this.active = true;
 
-    if (this.id % 1 == 0) this.aura = new Aura(this.effectContext, 130, 20, "red", 0.15, 0.4, "red", 2000);
+    if (this.id % 1 == 0) this.aura = new Aura(this.effectContext, 130, 5, "red", 0.1, 0.35, "red", 2000);
   }
 
   chaseTarget() {
@@ -155,6 +157,7 @@ export class Enemy {
 
   gotHit(damage, knockback) {
     this.hp -= damage;
+    healthChangeDisplays.push(new HealthChangeDisplay(this.x, this.y, damage, this.healthChangeContext, "red"));
 
     if (this.hp <= 0) this.die();
   }

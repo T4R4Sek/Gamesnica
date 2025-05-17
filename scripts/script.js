@@ -15,29 +15,30 @@ const gameBoard9 = /** @type {HTMLCanvasElement} */ document.getElementById("gam
 
 const ctx0 = /** @type {CanvasRenderingContext2D} */ gameBoard0.getContext("2d");
 const ctx1 = /** @type {CanvasRenderingContext2D} */ gameBoard1.getContext("2d");
-const ctx2 = /** @type {CanvasRenderingContext2D} */ gameBoard2.getContext("2d");
-const ctx3 = /** @type {CanvasRenderingContext2D} */ gameBoard3.getContext("2d");
+export const ctx2 = /** @type {CanvasRenderingContext2D} */ gameBoard2.getContext("2d"); // Effects
+const ctx3 = /** @type {CanvasRenderingContext2D} */ gameBoard3.getContext("2d"); // Enemies
 export const ctx4 = /** @type {CanvasRenderingContext2D} */ gameBoard4.getContext("2d");
-const ctx5 = /** @type {CanvasRenderingContext2D} */ gameBoard5.getContext("2d");
-const ctx6 = /** @type {CanvasRenderingContext2D} */ gameBoard6.getContext("2d");
+const ctx5 = /** @type {CanvasRenderingContext2D} */ gameBoard5.getContext("2d"); // Player
+const ctx6 = /** @type {CanvasRenderingContext2D} */ gameBoard6.getContext("2d"); // Heatlh Change Display
 const ctx7 = /** @type {CanvasRenderingContext2D} */ gameBoard7.getContext("2d");
 const ctx8 = /** @type {CanvasRenderingContext2D} */ gameBoard8.getContext("2d");
-const ctx9 = /** @type {CanvasRenderingContext2D} */ gameBoard9.getContext("2d");
+const ctx9 = /** @type {CanvasRenderingContext2D} */ gameBoard9.getContext("2d"); // Border
 
 let lastTime = 0;
 const targetFPS = 140;
 const frameDuration = 1000 / targetFPS;
 let deltaTimeAccumulated = 0;
 let gameRunning = true;
-let nextId = 0;
+export let nextId = 0;
 export let gameWidth = 1800;
 export let gameHeight = gameWidth;
 
 export let windowWidth;
 export let windowHeight;
-export const player = new Player(ctx5, ctx2);
+export const player = new Player(ctx5, ctx2, ctx6);
 export const enemies = [];
 export const collectibles = [];
+export const healthChangeDisplays = [];
 
 function load() {
   clearBoards();
@@ -111,11 +112,19 @@ function update(timestamp) {
 
   //? --- Actual updates ---
   player.update(deltaTimeAccumulated);
+
+  // Update enemies
   for (let i = enemies.length - 1; i >= 0; i--) {
     enemies[i].update(deltaTimeAccumulated);
   }
+
+  // Update collectibles
   for (let i = collectibles.length - 1; i >= 0; i--) {
     collectibles[i].update(deltaTimeAccumulated);
+  }
+  // Update damage displays
+  for (let i = healthChangeDisplays.length - 1; i >= 0; i--) {
+    healthChangeDisplays[i].update(deltaTimeAccumulated);
   }
 
   DrawBorder(ctx8);
@@ -201,8 +210,15 @@ function randomStuff() {
 }
 
 setTimeout(() => {
-  for (let i = 0; i < 30; i++) {
-    enemies.push(new Enemy(ctx3, ctx4, ctx2, nextId++, 50 + 50 * i, 400, 20, "rgb(255, 155, 155)", "red", 25, "circle", "chasePlayer"));
+  for (let i = 0; i < 35; i++) {
+    enemies.push(
+      new Enemy(ctx3, ctx4, ctx2, ctx6, nextId++, 50 + 50 * i, 200, 20, "rgb(255, 155, 155)", "red", 25, "circle", "chasePlayer")
+    );
+  }
+  for (let i = 0; i < 35; i++) {
+    enemies.push(
+      new Enemy(ctx3, ctx4, ctx2, ctx6, nextId++, 50 + 50 * i, 250, 20, "rgb(255, 155, 155)", "red", 25, "circle", "chasePlayer")
+    );
   }
 }, 50);
 

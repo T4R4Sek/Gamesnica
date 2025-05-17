@@ -1,9 +1,13 @@
-import { windowWidth, windowHeight, gameHeight, gameWidth } from "./script.js";
+import { windowWidth, windowHeight, gameHeight, gameWidth, healthChangeDisplays } from "./script.js";
 import { playerCoords } from "./player.js";
 const drawingOffset = { x: 0, y: 0 };
 
 const xCoordHUD = document.getElementById("x");
 const yCoordHUD = document.getElementById("y");
+const fpsHUD = document.getElementById("fps");
+
+let lastTime = 0;
+let fps = 0;
 
 let baseHealthWidth = 200;
 let healthHeight = 20;
@@ -90,24 +94,14 @@ export function DrawAura(x, y, size, aura) {
   let renderY = y + drawingOffset.y;
 
   // Context setup
-  let dashes = Math.round(Math.min(10, Math.max(2, size / 30)));
+  let dashes = Math.round(Math.min(10, Math.max(2, aura.baseSize / 30)));
   aura.context.setLineDash([(Math.PI * size) / dashes, (Math.PI * size) / dashes]);
   aura.context.fillStyle = aura.fillColor;
   aura.context.strokeStyle = aura.strokeColor;
   aura.context.lineWidth = Math.min(4, Math.max(1, size / 60)) * aura.lineWidth;
-  /*console.log(
-    `x: ${x}, y: ${y}, size: ${size}, fillColor: ${aura.fillColor}, strokeColor: ${aura.strokeColor}, lineWidth: ${Math.min(
-      5,
-      Math.max(1, size / 60)
-    )}`
-  );*/
 
   aura.rotation += 0.003 * aura.rotationDirection;
   if (aura.rotation >= 360 || aura.rotation <= -360) aura.rotation = 0;
-
-  // 50
-  // (50 * -1 >= 360 * -1)
-  // (-50 >= -360)
 
   // Drawing
   aura.context.save();
@@ -131,7 +125,22 @@ export function DrawAura(x, y, size, aura) {
   }
 }
 
+export function DrawTextDisplay(x, y, text, context, opacity, strokeStyle) {
+  let renderX = x + drawingOffset.x;
+  let renderY = y + drawingOffset.y;
+  context.globalAlpha = opacity;
+  context.fillStyle = "white";
+  context.strokeStyle = strokeStyle;
+  context.lineWidth = 1;
+  context.font = "18px Arial";
+  context.textAlign = "center";
+  context.textBaseLine = "middle";
+  context.strokeText(text, renderX, renderY);
+  context.fillText(text, renderX, renderY);
+}
+
 export function DrawHealingOrb(orb) {
+  orb.context.lineWidth = 1;
   orb.context.fillStyle = "rgb(0, 255, 0)";
   orb.context.strokeStyle = "rgb(0, 255, 0)";
   orb.context.beginPath();
@@ -145,9 +154,28 @@ export function DrawHealingOrb(orb) {
   orb.context.stroke();
 }
 
+export function DrawCoin(coin) {
+  coin.context.lineWidth = 1;
+  coin.context.fillStyle = "rgb(255, 255, 0)";
+  coin.context.strokeStyle = "rgb(255, 255, 255)";
+  coin.context.beginPath();
+  coin.context.globalAlpha = 1;
+  coin.context.arc(coin.x + drawingOffset.x, coin.y + drawingOffset.y, 2, 0, Math.PI * 2);
+  coin.context.stroke();
+  coin.context.fill();
+}
+
 export function UpdateHUD(x, y, health, maxHealth, context, shields, maxShields) {
   xCoordHUD.textContent = "x: " + Math.round(x);
   yCoordHUD.textContent = "y: " + Math.round(y);
+
+  const now = performance.now();
+  const delta = now - lastTime;
+  lastTime = now;
+
+  fps = Math.round(1000 / delta);
+
+  fpsHUD.textContent = "fps: " + fps;
 
   // HUD health outline
   context.fillStyle = "black";
