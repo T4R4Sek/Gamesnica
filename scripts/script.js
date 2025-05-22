@@ -1,6 +1,15 @@
+// UKOL Z MATIKY
+// H E M
+
 import { Player, playerCoords } from "./player.js";
 import { Enemy } from "./enemy.js";
 import { DrawBorder, UpdateHUD } from "./drawing.js";
+import { DamageAuraAreaEffect, HealAuraAreaEffect } from "./attacks.js";
+
+const startGameButton = document.getElementById("startGameButton");
+const quitGameButton = document.getElementById("quitGameButton");
+const startingScreen = document.getElementById("startingScreen");
+const midGameScreen = document.getElementById("midGameScreen");
 
 const gameBoard0 = /** @type {HTMLCanvasElement} */ document.getElementById("gameBoard0");
 const gameBoard1 = /** @type {HTMLCanvasElement} */ document.getElementById("gameBoard1");
@@ -21,26 +30,30 @@ export const ctx4 = /** @type {CanvasRenderingContext2D} */ gameBoard4.getContex
 const ctx5 = /** @type {CanvasRenderingContext2D} */ gameBoard5.getContext("2d"); // Player
 const ctx6 = /** @type {CanvasRenderingContext2D} */ gameBoard6.getContext("2d"); // Heatlh Change Display
 const ctx7 = /** @type {CanvasRenderingContext2D} */ gameBoard7.getContext("2d");
-const ctx8 = /** @type {CanvasRenderingContext2D} */ gameBoard8.getContext("2d");
-const ctx9 = /** @type {CanvasRenderingContext2D} */ gameBoard9.getContext("2d"); // Border
+const ctx8 = /** @type {CanvasRenderingContext2D} */ gameBoard8.getContext("2d"); // Border, HUD
+const ctx9 = /** @type {CanvasRenderingContext2D} */ gameBoard9.getContext("2d");
 
-let lastTime = 0;
-const targetFPS = 140;
-const frameDuration = 1000 / targetFPS;
-let deltaTimeAccumulated = 0;
-let gameRunning = true;
+let lastTime = performance.now();
+let accumulator = 0;
+const step = 1000 / 60;
+export let gameRunning = false;
+export let inGame = false;
+let lastGameStop = 0;
+let gameStopAddon = 0;
 export let nextId = 0;
 export let gameWidth = 1800;
 export let gameHeight = gameWidth;
+let blurOn = false;
 
 export let windowWidth;
 export let windowHeight;
-export const player = new Player(ctx5, ctx2, ctx6);
+export let player;
 export const enemies = [];
 export const collectibles = [];
 export const healthChangeDisplays = [];
+export const areaEffects = [];
 
-function load() {
+function startGame() {
   clearBoards();
 
   windowWidth = window.innerWidth * devicePixelRatio;
@@ -86,53 +99,94 @@ function load() {
   gameBoard8.style.height = window.innerHeight + "px";
   gameBoard9.style.width = window.innerWidth + "px";
   gameBoard9.style.height = window.innerHeight + "px";
+
+  lastGameStop = Date.now();
+
+  player = new Player(ctx5, ctx2, ctx6);
+
+  areaEffects.push(new DamageAuraAreaEffect(450 + Math.random() * 900, 450 + Math.random() * 900, "player", ctx2, 300, 50, 1000));
+  areaEffects.push(new DamageAuraAreaEffect(450 + Math.random() * 900, 450 + Math.random() * 900, "player", ctx2, 300, 50, 1000));
+  areaEffects.push(new DamageAuraAreaEffect(450 + Math.random() * 900, 450 + Math.random() * 900, "player", ctx2, 300, 50, 1000));
+
+  setTimeout(() => {
+    for (let i = 0; i < 35; i++) {
+      enemies.push(
+        new Enemy(ctx3, ctx4, ctx2, ctx6, nextId++, 50 + 50 * i, 200, 20, "rgb(255, 155, 155)", "red", 25, "circle", "chasePlayer")
+      );
+    }
+    for (let i = 0; i < 35; i++) {
+      enemies.push(
+        new Enemy(ctx3, ctx4, ctx2, ctx6, nextId++, 50 + 50 * i, 250, 20, "rgb(255, 155, 155)", "red", 25, "circle", "chasePlayer")
+      );
+    }
+  }, 50);
+
+  requestAnimationFrame(update);
 }
 
 function reset() {
   clearBoards();
 
-  player.reset();
-  enemies = [];
+  player = null;
+  enemies.length = 0;
+  collectibles.length = 0;
+  healthChangeDisplays.length = 0;
+  areaEffects.length = 0;
   lastTime = 0;
 }
 
 function update(timestamp) {
-  gameRunning ? requestAnimationFrame(update) : null; // Only update if the game is running
-  let deltaTime = timestamp - lastTime;
-  deltaTimeAccumulated += deltaTime;
-  if (deltaTime < frameDuration) {
-    return; // Skip this frame to maintain the target FPS
-  }
+  let delta = timestamp - lastTime;
   lastTime = timestamp;
+  accumulator += delta;
 
-  clearBoards();
-
-  if (isNaN(deltaTimeAccumulated)) deltaTimeAccumulated = 0;
-  deltaTimeAccumulated *= 0.001;
-
-  //? --- Actual updates ---
-  player.update(deltaTimeAccumulated);
-
-  // Update enemies
-  for (let i = enemies.length - 1; i >= 0; i--) {
-    enemies[i].update(deltaTimeAccumulated);
+  while (accumulator >= step) {
+    gameUpdate(step / 1000); // pass delta time in seconds
+    accumulator -= step;
   }
 
-  // Update collectibles
-  for (let i = collectibles.length - 1; i >= 0; i--) {
-    collectibles[i].update(deltaTimeAccumulated);
-  }
-  // Update damage displays
-  for (let i = healthChangeDisplays.length - 1; i >= 0; i--) {
-    healthChangeDisplays[i].update(deltaTimeAccumulated);
+  if (gameRunning && inGame) {
+    requestAnimationFrame(update);
   }
 
-  DrawBorder(ctx8);
+  function gameUpdate(deltaTime) {
+    clearBoards();
 
-  UpdateHUD(playerCoords.x, playerCoords.y, player.hp, player.maxHp, ctx9, player.sp, player.maxSp);
-  //? --- End of updates ---
+    //? --- Actual updates ---
+    player.update(deltaTime);
 
-  deltaTimeAccumulated = 0;
+    // Update enemies
+    for (let i = enemies.length - 1; i >= 0; i--) {
+      enemies[i].update(deltaTime);
+    }
+
+    // Update collectibles
+    for (let i = collectibles.length - 1; i >= 0; i--) {
+      collectibles[i].update(deltaTime);
+    }
+    // Update damage displays
+    for (let i = healthChangeDisplays.length - 1; i >= 0; i--) {
+      healthChangeDisplays[i].update(deltaTime);
+    }
+
+    for (let i = areaEffects.length - 1; i >= 0; i--) {
+      areaEffects[i].update(deltaTime);
+    }
+
+    DrawBorder(ctx8);
+
+    UpdateHUD(playerCoords.x, playerCoords.y, player.hp, player.maxHp, ctx8, player.sp, player.maxSp);
+  }
+}
+
+function quitGame() {
+  midGameScreen.style.display = "none";
+  startingScreen.style.display = "inline";
+
+  inGame = false;
+  gameRunning = false;
+
+  reset();
 }
 
 function clearBoards() {
@@ -209,18 +263,82 @@ function randomStuff() {
   }
 }
 
-setTimeout(() => {
-  for (let i = 0; i < 35; i++) {
-    enemies.push(
-      new Enemy(ctx3, ctx4, ctx2, ctx6, nextId++, 50 + 50 * i, 200, 20, "rgb(255, 155, 155)", "red", 25, "circle", "chasePlayer")
-    );
-  }
-  for (let i = 0; i < 35; i++) {
-    enemies.push(
-      new Enemy(ctx3, ctx4, ctx2, ctx6, nextId++, 50 + 50 * i, 250, 20, "rgb(255, 155, 155)", "red", 25, "circle", "chasePlayer")
-    );
-  }
-}, 50);
+document.addEventListener("keydown", (event) => {
+  if (inGame == false) return;
 
-load();
-update();
+  if (event.key == "Escape") {
+    stopGame();
+  }
+});
+
+function stopGame() {
+  gameRunning = !gameRunning;
+
+  //
+  // gameStopAddon:
+  //
+  // Accumulates all the time that has passed in stopped mode and then adds it where it is
+  // needed because of actions that take time and are checked by Date.now()
+  //dddddd
+  // I feel like it is better then to allways add the deltaTime and check it like that
+  //
+
+  if (gameRunning == true && inGame == true) {
+    midGameScreen.style.display = "none";
+
+    gameStopAddon = Date.now() - lastGameStop;
+
+    // Update enemy auras
+    enemies.forEach((enemy) => {
+      if (enemy.aura != null) {
+        enemy.aura.gameStopAddon += gameStopAddon;
+      }
+    });
+
+    // Update player aura
+    if (player.aura != null && player.aura !== undefined) {
+      player.aura.gameStopAddon += gameStopAddon;
+    }
+    player.gameStopAddonShields += gameStopAddon;
+
+    // Update player auras
+    areaEffects.forEach((auraEffect) => {
+      if (auraEffect.aura != null) {
+        auraEffect.aura.gameStopAddon += gameStopAddon;
+      }
+    });
+
+    update();
+  } else {
+    midGameScreen.style.display = "inline";
+    lastGameStop = Date.now();
+  }
+}
+
+window.addEventListener("blur", () => {
+  if (blurOn == true) exitedWindow();
+});
+
+document.addEventListener("visibilitychange", () => {
+  exitedWindow();
+});
+
+function exitedWindow() {
+  if (inGame == false) return;
+
+  if (gameRunning == true) {
+    stopGame();
+  }
+}
+
+startGameButton.addEventListener("click", () => {
+  startingScreen.style.display = "none";
+  inGame = true;
+  gameRunning = true;
+
+  startGame();
+});
+
+quitGameButton.addEventListener("click", () => {
+  quitGame();
+});

@@ -1,13 +1,15 @@
-import { DrawTextDisplay } from "./drawing.js";
-import { ctx4, healthChangeDisplays } from "./script.js";
+import { baseHealthWidth, DrawTextDisplay, healthHeight, healthOffset } from "./drawing.js";
+import { ctx4, healthChangeDisplays, player, windowHeight, windowWidth } from "./script.js";
 
 export let healthChangeDisplayNextId = 0;
 
 export class HealthChangeDisplay {
-  constructor(x, y, amount, context, strokeStyle) {
+  constructor(x, y, amount, context, strokeStyle, staticPosition) {
+    this.staticPosition = staticPosition;
+    this.staticPosition == true ? null : (this.staticPosition = false);
     this.x = x;
     this.y = y;
-    this.text = amount;
+    this.text = Math.round(amount);
     this.strokeStyle = strokeStyle;
 
     this.context = context;
@@ -42,7 +44,7 @@ export class HealthChangeDisplay {
     let opacity = Math.min(1, 2 * (1 - this.age / this.maxAge));
 
     this.move(currentDeltaTime);
-    DrawTextDisplay(this.x, this.y, this.text, this.context, opacity, this.strokeStyle);
+    DrawTextDisplay(this.x, this.y, this.text, this.context, opacity, this.strokeStyle, this.staticPosition);
 
     this.age += currentDeltaTime;
     if (this.age > this.maxAge) this.die();

@@ -1,8 +1,7 @@
-import { AuraAttack } from "./attacks.js";
-import { DrawPlayer, DrawAura, UpdateOffset } from "./drawing.js";
+import { DrawPlayer, DrawAura, UpdateOffset, healthHeight, healthOffset, baseHealthWidth } from "./drawing.js";
 import { HealthChangeDisplay } from "./healthChangeDisplay.js";
-import { gameHeight, gameWidth, healthChangeDisplays } from "./script.js";
-import { Aura } from "./weapons.js";
+import { gameHeight, gameRunning, gameWidth, healthChangeDisplays, inGame, windowHeight } from "./script.js";
+import { DamageAura } from "./weapons.js";
 
 const keysDown = { w: false, s: false, a: false, d: false };
 export const playerCoords = { x: 0, y: 0 };
@@ -31,6 +30,11 @@ export class Player {
     this.hp = this.maxHp;
     this.maxSp = 100;
     this.sp = this.maxSp;
+    this.canRegenerateShields = true;
+    this.canRegenerateShieldsDelay = 7000;
+    this.lastHit = 0;
+    this.gameStopAddonShields = 0;
+    this.shieldRegeneration = 5; // Sp per second regenerated
 
     this.moveX = 0;
     this.moveY = 0;
@@ -38,7 +42,7 @@ export class Player {
     this.pushY = 0;
 
     // --- Attacks ---
-    this.aura = new Aura(this.effectContext, 250, 30, "rgb(70, 243, 255)", 0.15, 0.4, "rgb(70, 203, 255)", 1000);
+    this.aura = new DamageAura(this.effectContext, 390, 20, 1250, "player");
 
     // Coins
     this.coins = 20;
@@ -93,6 +97,22 @@ export class Player {
     }
   }
 
+  handleShieldRegeneration(currentDeltaTime) {
+    // Only update when player has any max shields
+    if (this.maxSp <= 0) return;
+
+    // Start regenerating if the time has passed and not if you already can regenerate shields
+    if (Date.now() > this.lastHit + this.canRegenerateShieldsDelay + this.gameStopAddonShields && this.canRegenerateShields == false) {
+      this.canRegenerateShields = true;
+      this.gameStopAddonShields = 0;
+    }
+
+    // Update the sp if you can regenerate shields and don't have max sp
+    if (this.canRegenerateShields == true && this.sp < this.maxSp) {
+      this.sp = Math.min(this.maxSp, this.sp + this.shieldRegeneration * currentDeltaTime);
+    }
+  }
+
   handleBorderCollision() {
     // Left and right
     if (this.x - this.size < 0) this.x = this.size;
@@ -104,6 +124,8 @@ export class Player {
   }
 
   update(currentDeltaTime) {
+    this.handleShieldRegeneration(currentDeltaTime);
+
     this.handleKeys();
     this.move(currentDeltaTime);
     this.handleBorderCollision();
@@ -121,15 +143,23 @@ export class Player {
   }
 
   handleAura(x, y, aura) {
-    let size = aura.size; //TODO Stacking buffs
-    let damage = aura.baseDamage; //TODO Stacking buffs
-    AuraAttack(this.x, this.y, size, damage, this.aura, "enemies");
+    this.aura.handleAura(this.x, this.y, this.aura, "player");
     //TODO Hitting enemies
 
-    DrawAura(x, y, size, aura);
+    DrawAura(x, y, aura.size, aura);
   }
 
   gotHit(damage, knockback) {
+    this.lastHit = Date.now();
+    this.canRegenerateShields = false;
+
+    let color = "red";
+    if (this.sp > 0 && this.sp > damage) {
+      color = "rgb(0, 140, 255)";
+    }
+
+    healthChangeDisplays.push(new HealthChangeDisplay(this.x, this.y, damage, this.healthChangeContext, color));
+
     if (this.sp > damage) {
       this.sp -= damage;
     } else if (this.sp > 0 && this.sp <= damage) {
@@ -148,7 +178,6 @@ export class Player {
 
   addCoins(amount) {
     this.coins += amount;
-    console.log("Coins: " + this.coins);
   }
 
   die() {
@@ -207,5 +236,15 @@ document.addEventListener("keyup", (event) => {
     case "ArrowRight":
       keysDown.d = false;
       break;
+  }
+});
+
+window.addEventListener("blur", () => {
+  if (inGame == false) return;
+
+  if (gameRunning == true) {
+    for (let key in keysDown) {
+      keysDown[key] = false;
+    }
   }
 });

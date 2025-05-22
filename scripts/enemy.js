@@ -1,8 +1,7 @@
 import { DrawEnemy, DrawAura } from "./drawing.js";
 import { gameHeight, gameWidth, enemies, healthChangeDisplays } from "./script.js";
 import { playerCoords } from "./player.js";
-import { AuraAttack } from "./attacks.js";
-import { Aura } from "./weapons.js";
+import { DamageAura, HealAura } from "./weapons.js";
 import { checkDrops } from "./drops.js";
 import { HealthChangeDisplay } from "./healthChangeDisplay.js";
 
@@ -41,7 +40,9 @@ export class Enemy {
     this.render = true;
     this.active = true;
 
-    if (this.id % 1 == 0) this.aura = new Aura(this.effectContext, 130, 5, "red", 0.1, 0.35, "red", 2000);
+    if (Math.random() < 0.25) {
+      this.aura = new DamageAura(this.effectContext, 100, 5, 2000, "enemies");
+    } else this.aura = null;
   }
 
   chaseTarget() {
@@ -148,11 +149,9 @@ export class Enemy {
   }
 
   handleAura(x, y, aura) {
-    let size = aura.size;
-    let damage = aura.baseDamage;
-    AuraAttack(this.x, this.y, size, damage, this.aura, "player");
+    aura.handleAura(this.x, this.y, this.aura, "enemies");
 
-    DrawAura(x, y, size, aura);
+    DrawAura(x, y, aura.size, aura);
   }
 
   gotHit(damage, knockback) {
@@ -160,6 +159,11 @@ export class Enemy {
     healthChangeDisplays.push(new HealthChangeDisplay(this.x, this.y, damage, this.healthChangeContext, "red"));
 
     if (this.hp <= 0) this.die();
+  }
+
+  heal(amount) {
+    this.hp = Math.min(this.hp + amount, this.maxHp);
+    healthChangeDisplays.push(new HealthChangeDisplay(this.x, this.y, amount, this.healthChangeContext, "rgb(0, 255, 0)"));
   }
 
   die() {
@@ -184,7 +188,7 @@ export class Enemy {
     this.checkAllyProximity();
     this.handleBorderCollision();
 
-    if (this.aura != null || !(this.aura === undefined)) {
+    if (this.aura != null && !(this.aura === undefined)) {
       this.handleAura(this.x, this.y, this.aura);
     }
 

@@ -1,5 +1,4 @@
-import { windowWidth, windowHeight, gameHeight, gameWidth, healthChangeDisplays } from "./script.js";
-import { playerCoords } from "./player.js";
+import { windowWidth, windowHeight, gameHeight, gameWidth, healthChangeDisplays, player } from "./script.js";
 const drawingOffset = { x: 0, y: 0 };
 
 const xCoordHUD = document.getElementById("x");
@@ -9,14 +8,14 @@ const fpsHUD = document.getElementById("fps");
 let lastTime = 0;
 let fps = 0;
 
-let baseHealthWidth = 200;
-let healthHeight = 20;
-let healthOffset = 50;
+export const baseHealthWidth = 200;
+export const healthHeight = 20;
+export const healthOffset = 50;
 
 let borderOffset = 3000;
 
-let shieldAnimationMax = 0.65;
-let shieldAnimationMin = 0.35;
+const shieldAnimationMax = 0.65;
+const shieldAnimationMin = 0.35;
 let shieldAnimation = shieldAnimationMin;
 let shieldAnimationSpeed = 0.0075;
 let shieldAnimationBaseSpeed = 0.0075;
@@ -94,8 +93,12 @@ export function DrawAura(x, y, size, aura) {
   let renderY = y + drawingOffset.y;
 
   // Context setup
-  let dashes = Math.round(Math.min(10, Math.max(2, aura.baseSize / 30)));
-  aura.context.setLineDash([(Math.PI * size) / dashes, (Math.PI * size) / dashes]);
+  if (aura.baseDamage !== undefined && aura.baseDamage != null) {
+    let dashes = Math.round(Math.min(10, Math.max(2, aura.baseSize / 30)));
+    aura.context.setLineDash([(Math.PI * size) / dashes, (Math.PI * size) / dashes]);
+  } else {
+    aura.context.setLineDash([]);
+  }
   aura.context.fillStyle = aura.fillColor;
   aura.context.strokeStyle = aura.strokeColor;
   aura.context.lineWidth = Math.min(4, Math.max(1, size / 60)) * aura.lineWidth;
@@ -120,6 +123,9 @@ export function DrawAura(x, y, size, aura) {
 
   aura.context.restore();
 
+  if (aura.baseHeal !== undefined && aura.baseHeal != null) {
+  }
+
   if (aura.currentAlpha > aura.minAlpha) {
     aura.updateRender();
   }
@@ -128,6 +134,7 @@ export function DrawAura(x, y, size, aura) {
 export function DrawTextDisplay(x, y, text, context, opacity, strokeStyle) {
   let renderX = x + drawingOffset.x;
   let renderY = y + drawingOffset.y;
+
   context.globalAlpha = opacity;
   context.fillStyle = "white";
   context.strokeStyle = strokeStyle;
@@ -141,8 +148,8 @@ export function DrawTextDisplay(x, y, text, context, opacity, strokeStyle) {
 
 export function DrawHealingOrb(orb) {
   orb.context.lineWidth = 1;
-  orb.context.fillStyle = "rgb(0, 255, 0)";
-  orb.context.strokeStyle = "rgb(0, 255, 0)";
+  orb.context.fillStyle = "hsl(120, 100%, " + 50 * orb.whitenessMultiplier + "%)";
+  orb.context.strokeStyle = "hsl(120, 100%, " + 50 * orb.whitenessMultiplier + "%)";
   orb.context.beginPath();
   orb.context.globalAlpha = 1;
   orb.context.arc(orb.x + drawingOffset.x, orb.y + drawingOffset.y, 3, 0, Math.PI * 2);
@@ -182,23 +189,56 @@ export function UpdateHUD(x, y, health, maxHealth, context, shields, maxShields)
   context.fillRect(healthOffset, windowHeight - healthOffset - healthHeight, baseHealthWidth, healthHeight);
 
   // HUD heatlh fill
-  context.fillStyle = "red";
-  context.fillRect(
-    healthOffset + 3,
-    windowHeight - healthOffset - healthHeight + 3,
-    (baseHealthWidth - 6) * (Math.max(0, health) / maxHealth),
-    healthHeight - 6
-  );
+  HealthBar();
 
   // HUD shields
-  shieldAnimationFunction();
-  context.fillStyle = "hsla(59, 100.00%, 50.00%, " + shieldAnimation + ")";
-  context.fillRect(
-    healthOffset + 3,
-    windowHeight - healthOffset - healthHeight + 3,
-    (baseHealthWidth - 6) * (Math.max(0, shields) / maxShields),
-    healthHeight - 6
-  );
+  ShieldBar();
+
+  // Coins
+  context.font = "20px Arial";
+  context.fillStyle = "yellow";
+  context.strokeStyle = "black";
+  context.fillText(player.coins, 90, 150);
+
+  context.lineWidth = 1;
+  context.textAlign = "left";
+  context.textBaseLine = "middle";
+  context.beginPath();
+  context.arc(82, 144, 4, 0, Math.PI * 2);
+  context.fill();
+  context.stroke();
+
+  function HealthBar() {
+    context.fillStyle = "red";
+    context.fillRect(
+      healthOffset + 3,
+      windowHeight - healthOffset - healthHeight + 3,
+      (baseHealthWidth - 6) * (Math.max(0, health) / maxHealth),
+      healthHeight - 6
+    );
+  }
+
+  function ShieldBar() {
+    context.fillStyle = "black";
+    context.fillRect(healthOffset, windowHeight - healthOffset - healthHeight - 25, baseHealthWidth, healthHeight);
+
+    shieldAnimationFunction();
+    context.fillStyle = "rgb(0, 174, 255)";
+    context.fillRect(
+      healthOffset + 3,
+      windowHeight - healthOffset - healthHeight + 3 - 25,
+      (baseHealthWidth - 6) * (Math.max(0, shields) / maxShields),
+      healthHeight - 6
+    );
+
+    context.fillStyle = "hsla(0, 100.00%, 100.00%, " + shieldAnimation + ")";
+    context.fillRect(
+      healthOffset + 3,
+      windowHeight - healthOffset - healthHeight + 3 - 25,
+      (baseHealthWidth - 6) * (Math.max(0, shields) / maxShields),
+      healthHeight - 6
+    );
+  }
 }
 
 /**

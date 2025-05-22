@@ -14,6 +14,12 @@ class Collectible {
     this.context = context;
     this.id = id;
     this.moveSpeed = 290 + Math.round(Math.random() * 20);
+
+    let direction = Math.random() * 2 * Math.PI;
+    let speed = 100 + Math.floor(Math.random() * 130);
+    this.dx = Math.cos(direction) * speed;
+    this.dy = Math.sin(direction) * speed;
+    this.friction = 0.96;
   }
 
   move(currentDeltaTime) {
@@ -89,13 +95,10 @@ export class HealingOrb extends Collectible {
   constructor(x, y, context, id) {
     super(x, y, context, id);
 
-    let direction = Math.random() * 2 * Math.PI;
-    let speed = 100 + Math.floor(Math.random() * 130);
-    this.dx = Math.cos(direction) * speed;
-    this.dy = Math.sin(direction) * speed;
-    this.friction = 0.96;
+    this.startingHp = 30;
+    this.hpAdd = this.startingHp;
 
-    this.hpAdd = 30;
+    this.whitenessMultiplier = 1;
 
     this.magnetStrengthMultiplier = 1;
   }
@@ -114,8 +117,16 @@ export class HealingOrb extends Collectible {
   }
 
   die() {
-    player.heal(this.hpAdd);
-    super.die();
+    if (player.hp + this.hpAdd <= player.maxHp) {
+      player.heal(this.hpAdd);
+      super.die();
+    } else {
+      let hpToAdd = player.maxHp - player.hp;
+      player.heal(hpToAdd);
+      this.hpAdd -= hpToAdd;
+
+      this.whitenessMultiplier = 1 + 0.9 * (1 - this.hpAdd / this.startingHp);
+    }
   }
 
   update(currentDeltaTime) {
@@ -131,12 +142,6 @@ export class Coin extends Collectible {
   constructor(x, y, context, id, value) {
     super(x, y, context, id);
 
-    let direction = Math.random() * 2 * Math.PI;
-    let speed = 100 + Math.floor(Math.random() * 130);
-    this.dx = Math.cos(direction) * speed;
-    this.dy = Math.sin(direction) * speed;
-    this.friction = 0.96;
-
     this.coinValue = value;
 
     this.magnetStrengthMultiplier = 1.5;
@@ -149,16 +154,32 @@ export class Coin extends Collectible {
     this.moveTowardsPlayer(currentDeltaTime, variables.dx, variables.dy, variables.distance);
   }
 
-  die() {
-    player.addCoins(this.coinValue);
-    super.die();
+  merge() {}
+
+  checkCoinProximity() {
+    // for (let i = collectibles.length - 1; i >= 0; i--) {
+    //   if (!(collectibles[i] instanceof Coin)) continue;
+    //   if (this.id <= collectibles[i].id) continue;
+    //   let dx = collectibles[i].x - this.x;
+    //   let dy = collectibles[i].y - this.y;
+    //   let distanceSq = dx * dx + dy * dy;
+    //   if (distanceSq < 400) {
+    //     collectibles[i].coinValue += this.coinValue;
+    //     this.die();
+    //     return;
+    //   }
+    // }
   }
 
   update(currentDeltaTime) {
+    this.checkCoinProximity();
     this.seekPlayer(currentDeltaTime);
     this.move(currentDeltaTime);
     this.checkBorderCollision();
-    if (this.checkPlayerCollision()) this.die();
+    if (this.checkPlayerCollision()) {
+      player.addCoins(this.coinValue);
+      this.die();
+    }
     DrawCoin(this);
   }
 }
